@@ -1,0 +1,31 @@
+# Builds the Mac version of WebStudio on a GitHub-hosted Mac. The source code lives in a private
+# repo: it's checked out with the SOURCE_TOKEN secret, built here (public repos get free macOS
+# minutes) and only the finished app is uploaded to this repo's release draft for that version.
+name: Build Mac
+
+on:
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: Branch or tag of the source to build
+        default: main
+
+jobs:
+  mac:
+    runs-on: macos-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: OmniForgeStudio/WebStudio-Source
+          ref: ${{ inputs.ref }}
+          token: ${{ secrets.SOURCE_TOKEN }}
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm ci
+      - run: node node_modules/electron/install.js
+      - run: npm run release:mac
+        env:
+          GH_TOKEN: ${{ secrets.SOURCE_TOKEN }}
